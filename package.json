@@ -1,0 +1,24 @@
+{
+  "name": "discordia",
+  "version": "1.0.0",
+  "description": "A Discord websocket mapper for TypeScript",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rm -fr dist && tsc && clear && echo \"Build complete!\"",
+    "start": "node dist/index.js",
+    "test": "npm run build && npm start"
+  },
+  "author": "0x7030676e31",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ws": "^8.12.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.4"
+  }
+}
