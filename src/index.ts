@@ -1,9 +1,10 @@
 import { config } from "dotenv";
 import Socket from "./socket.js";
+import { error } from "./log.js";
 
 config();
 
 const { TOKEN } = process.env;
-if (!TOKEN) throw new Error("To use this package, you must set a TOKEN environment variable.");
+if (!TOKEN) error("No token provided");
 
 new Socket(TOKEN);

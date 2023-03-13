@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import mapper from "./mapper.js";
 import op2 from "./op2.json" assert { type: "json" };
+import { log, error } from "./log.js";
 
 const URL = "wss://gateway.discord.gg/?encoding=json&v=10";
 
@@ -26,8 +27,7 @@ export default class Socket {
 
   private onClose(code: number, reason: string): void {
     if (this.hbInterval) clearInterval(this.hbInterval);
-    console.log(`Socket closed with code ${code} and reason ${reason}`);
-    process.exit(1);
+    error(`Disconnected from Discord: ${code} ${reason}`);
   }
 
   private onMessage(msg: any): void {
@@ -39,6 +39,7 @@ export default class Socket {
         if (payload.t === "READY") {
           this.resumeUrl = payload.d.resume_gateway_url;
           this.sessionID = payload.d.session_id;
+          log("Client is ready");
         }
         
         mapper.register(payload.t, payload.d);
@@ -56,6 +57,7 @@ export default class Socket {
 
       case 10:
         this.hbInterval = setInterval(this.heartbeat.bind(this), +payload.d.heartbeat_interval);
+        log("Discord is saying hello");
         break;
     }
   }
@@ -70,7 +72,10 @@ export default class Socket {
   private async connect(): Promise<void> {
     const ws = this.ws = new WebSocket(URL);
   
-    ws.on("open", () => ws.send(JSON.stringify(op2)));
+    ws.on("open", () => {
+      ws.send(JSON.stringify(op2));
+      log("Connected to Discord");
+    });
     ws.on("close", this.onClose.bind(this));
     ws.on("message", this.onMessage.bind(this));
   }
