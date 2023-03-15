@@ -1,7 +1,7 @@
 import { log, warn, error } from "./log.js";
 import fs from "fs";
 
-type config = { [key: string]: string[][] };
+type Config = { [key: string]: string[][] };
 
 type Type = {
   undef: boolean;
@@ -10,15 +10,17 @@ type Type = {
   obj: { [key: string]: Type } | null;
 }
 
+type Entry = {
+  where: { [key: string]: any };
+  data: Type;
+}
+
 type Events = {
-  [key: string]: [Type, ...{
-    where: { [key: string]: any };
-    data: Type;
-  }[]];
+  [key: string]: [Type, ...Entry[]];
 }
 
 class Tmapper {
-  private config: config = {};
+  private config: Config = {};
   private events: Events = {};
 
   private exited: boolean = false;
@@ -104,7 +106,26 @@ class Tmapper {
   // Register an event
   public register(event: string, data: any): void {
     if (!(event in this.events)) this.events[event] = [{ undef: false, types: [], arr: null, obj: null }];
+    
+    // Map the data to the base type
     this.map(this.events[event][0], data);
+    
+    // If there is no config for this event, return
+    if (!(event in this.config)) return;
+    
+    // Get the pattern and analyze the data
+    const pattern = structuredClone(this.config[event]);
+    const configuration = this.analyze(pattern, data);
+
+    // Find the index of the configuration. If it doesn't exist, add it
+    let idx = (this.events[event].slice(1) as Entry[]).findIndex(v => this.cmp(configuration, v.where));
+    if (idx === -1) {
+      this.events[event].push({ where: configuration, data: { undef: false, types: [], arr: null, obj: null } });
+      idx = this.events[event].length - 2;
+    }
+
+    // Map the data to the configuration
+    this.map((this.events[event][idx + 1] as Entry).data, data);
   }
 
   // Map an object to a type
@@ -144,9 +165,49 @@ class Tmapper {
     if (!ref.types.some(v => v === type)) ref.types.push(type);
   }
 
-  // TODO: analyze the types based on the config
-  private analyze(): { [key: string]: any } {
-    return {};
+  // Analyze an object and return the properties
+  private analyze(keys: string[][], obj: any): { [key: string]: any } {
+    const props: { [key: string]: any } = {};
+
+    // Loop through the keys and get the properties
+    for (const key of keys) props[key.join(".")] = this.inspect(obj, key);
+    return props;
+  }
+
+  // Inspect an object and return the value at the given keys
+  private inspect(obj: any, keys: string[]): any {
+    if (typeof obj !== "object" || obj === null) return;
+    
+    // Get the key and remove it from the keys array
+    const key = keys.shift()!;
+    if (!(key in obj)) return;
+
+    // If there are no more keys, return the value, otherwise inspect the object
+    if (keys.length === 0) return obj[key];
+    return this.inspect(obj[key], keys);
+  }
+
+  // Deeply compare two objects
+  private cmp(objA: any, objB: any): boolean {
+    const typeA = objA === null ? "null" : typeof objA;
+    const typeB = objB === null ? "null" : typeof objB;
+
+    // If the types are different, return false
+    if (typeA !== typeB) return false;
+
+    // If the types are arrays, compare the lengths and the values
+    if (objA instanceof Array) return objA.length === objB.length && objA.every((v, i) => this.cmp(v, objB[i]));
+
+    // If the types are objects, compare the keys and the values
+    if (typeA === "object") {
+      const keysA = Object.keys(objA);
+      const keysB = Object.keys(objB);
+
+      if (keysA.length !== keysB.length || keysA.some(k => !keysB.includes(k))) return false;
+      return keysA.every(k => this.cmp(objA[k], objB[k]));
+    }
+    
+    return objA === objB;
   }
 }
 

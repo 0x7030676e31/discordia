@@ -35,4 +35,9 @@ npm run compile
 This will generate `types.ts` file in `types` directory as well as `declarations.txt` file which will contain list of all generated types.
 
 ## Risk
-Discordia uses user token to connect to Discord's WebSocket API. It's designed to mimic user's behavior, but it's not guaranteed that it will not be detected by Discord. Use it at your own risk. Personally, I've been banned by using such tools so it's relatively safe.
+Discordia uses user token to connect to Discord's WebSocket API. It's designed to mimic user's behavior, but it's not guaranteed that it will not be detected by Discord. However, I Iused such tools a lot and never got banned so it's relatively safe to use.
+
+## TODO
+- Change how data is stored
+- Complete websocket cycle
+- Implement compiler
