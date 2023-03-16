@@ -1,27 +1,12 @@
 import { log, warn, error } from "./log.js";
+import * as _ from "./types.js";
 import fs from "fs";
 
 type Config = { [key: string]: string[][] };
 
-type Type = {
-  undef: boolean;
-  types: string[];
-  arr: Type | null;
-  obj: { [key: string]: Type } | null;
-}
-
-type Entry = {
-  where: { [key: string]: any };
-  data: Type;
-}
-
-type Events = {
-  [key: string]: [Type, ...Entry[]];
-}
-
 class Tmapper {
   private config: Config = {};
-  private events: Events = {};
+  private events: _.Events = {};
 
   private exited: boolean = false;
 
@@ -118,18 +103,18 @@ class Tmapper {
     const configuration = this.analyze(pattern, data);
 
     // Find the index of the configuration. If it doesn't exist, add it
-    let idx = (this.events[event].slice(1) as Entry[]).findIndex(v => this.cmp(configuration, v.where));
+    let idx = (this.events[event].slice(1) as _.Entry[]).findIndex(v => this.cmp(configuration, v.where));
     if (idx === -1) {
       this.events[event].push({ where: configuration, data: { undef: false, types: [], arr: null, obj: null } });
       idx = this.events[event].length - 2;
     }
 
     // Map the data to the configuration
-    this.map((this.events[event][idx + 1] as Entry).data, data);
+    this.map((this.events[event][idx + 1] as _.Entry).data, data);
   }
 
   // Map an object to a type
-  private map(ref: Type, obj: object | object[] | any): void {
+  private map(ref: _.Type, obj: object | object[] | any): void {
     const type = obj === null ? "null" : typeof obj;
     const isArray = Array.isArray(obj);
 
