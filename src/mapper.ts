@@ -1,8 +1,11 @@
 import { log, warn, error } from "./log.js";
+import Binary from "./bin.js";
 import * as _ from "./types.js";
 import fs from "fs";
 
 type Config = { [key: string]: string[][] };
+
+const FILE = new Binary("types/dataset");
 
 class Tmapper {
   private config: Config = {};
@@ -41,14 +44,13 @@ class Tmapper {
       fs.mkdirSync("types");
       warn("Could not find types folder");
     }
-    if (!fs.existsSync("types/events.json")) {
-      fs.writeFileSync("types/events.json", "{}");
-      warn("Could not find events.json file");
+    if (!fs.existsSync("types/dataset")) {
+      warn("Could not find dataset file");
+      return;
     }
 
-    const content = fs.readFileSync("types/events.json", "utf-8");
-    this.events = JSON.parse(content);
-    log(`Loaded ${content.length} bytes from events.json`);
+    this.events = FILE.decode();
+    log(`Loaded dataset file with ${Object.keys(this.events).length} events`);
   }
 
   // Load the config file and parse it
@@ -83,9 +85,11 @@ class Tmapper {
     log("Loaded config file");
   }
 
+  // Save the types file
   private saveTypes(): void {
     log("Saving types...");
-    fs.writeFileSync("types/events.json", JSON.stringify(this.events));
+    const size = FILE.encode(this.events);
+    log(`Saved dataset file with ${Object.keys(this.events).length} events (${size} bytes)`);
   }
 
   // Register an event

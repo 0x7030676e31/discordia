@@ -1,16 +1,18 @@
 import fs from "fs";
+import Binary from "./bin.js";
 import * as _ from "./types.js";
+
+const FILE = new Binary("types/dataset");
 
 class Compiler {
   constructor() {
-    if (!fs.existsSync("./types/events.json")) throw new Error("Could not find events.json file");
-    const content = JSON.parse(fs.readFileSync("./types/events.json", "utf-8")) as _.Events;
+    if (!fs.existsSync("./types/dataset")) throw new Error("Could not find events.json file");
+    const data = FILE.decode();
   
     const types: string[] = [];
-
-    const events = Object.keys(content).sort();
+    const events = Object.keys(data).sort();
     for (const event of events) {
-      const [type, ...entries] = content[event];
+      const [type, ...entries] = data[event];
 
       types.push(`export type ${event} = ${this.compileType(type, 1, event)};`);
       // entries.forEach(entry => console.log(`## ${event}.${Object.keys(entry.where).join(".")}`));

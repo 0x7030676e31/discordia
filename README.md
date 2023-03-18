@@ -38,6 +38,5 @@ This will generate `types.ts` file in `types` directory as well as `declarations
 Discordia uses user token to connect to Discord's WebSocket API. It's designed to mimic user's behavior, but it's not guaranteed that it will not be detected by Discord. However, I Iused such tools a lot and never got banned so it's relatively safe to use.
 
 ## TODO
-- Change how data is stored
 - Complete websocket cycle
 - Implement compiler
