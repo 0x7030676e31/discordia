@@ -39,4 +39,3 @@ Discordia uses user token to connect to Discord's WebSocket API. It's designed t
 
 ## TODO
 - Complete websocket cycle
-- Implement compiler

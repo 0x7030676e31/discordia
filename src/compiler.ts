@@ -5,26 +5,59 @@ import * as _ from "./types.js";
 const FILE = new Binary("types/dataset");
 
 class Compiler {
+  private staticFields: { [key: string]: any } = {};
+  
   constructor() {
     if (!fs.existsSync("./types/dataset")) throw new Error("Could not find events.json file");
     const data = FILE.decode();
   
+    let count = 0;
+
     const types: string[] = [];
+    const declarations: string[] = [];
     const events = Object.keys(data).sort();
     for (const event of events) {
       const [type, ...entries] = data[event];
+      count += entries.length + 1;
+      
+      const eventTypes: string[] = [`MAIN_${event}`];
 
-      types.push(`export type ${event} = ${this.compileType(type, 1, event)};`);
-      // entries.forEach(entry => console.log(`## ${event}.${Object.keys(entry.where).join(".")}`));
+      // Compile main event
+      declarations.push(`${event} with ${entries.length + 1} subtypes`, `\t - MAIN_${event}`);
+      types.push(`export type MAIN_${event} = ${this.compileType(type, 1, event)};`);
+
+      // Compile partial events
+      for (const idx in entries) {
+        const entry = entries[idx];
+
+        // Add static fields to the staticFields object
+        for (const key in entry.where) this.staticFields[`${event}.${key}`] = entry.where[key];
+        
+        // Compile partial event
+        types.push(`export type PARTIAL_${event}_${idx} = ${this.compileType(entry.data, 1, event)};`);
+
+        // Add partial event to the eventTypes array
+        eventTypes.push(`PARTIAL_${event}_${idx}`);
+        declarations.push(`\t - PARTIAL_${event}_${idx} with ${Object.entries(entry.where).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join(", ")}`);
+        this.staticFields = {};
+      }
+
+      // Generate event type
+      types.push(`export type ${event} = ${eventTypes.join(" | ")};\n`);
+      declarations.push("");
     }
 
-    fs.writeFileSync("./types/types.ts", types.join("\n"));
+    declarations.push(`\n${events.length} Events mapped`, `${count} Types declared`, `Discordia ${new Date().toLocaleString()}`);
+
+    fs.writeFileSync("./types/types.ts", types.join("\n\n"));
+    fs.writeFileSync("./types/declarations.txt", declarations.join("\n"));
   }
 
   private compileType(type: _.Type, depth: number = 1, path: string = ""): string {
-    const entries: string[] = [];
+    // Check if the type is a static field
+    if (path in this.staticFields) return JSON.stringify(this.staticFields[path]);
 
-    // console.log(path);
+    const entries: string[] = [];
 
     // Compile array
     if (type.arr !== null) entries.push(`${this.compileType(type.arr, depth, `${path}.#`)}[]`);    

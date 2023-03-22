@@ -24,7 +24,6 @@ export default class Binary {
       this.decodeOffset++;
 
       res[key] = [ this.decodeType(buff) ];
-      console.log(key);
 
       while (buff[this.decodeOffset] !== 0x00) {
         const where: Obj = this.decodeJson(buff);
